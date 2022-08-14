@@ -1,4 +1,5 @@
 const fs = require("fs");
+const crypto = require("crypto")
 const ocsp = require("ocsp");
 const { exec } = require("child_process");
 
@@ -29,15 +30,13 @@ exec(`openssl pkcs12 -in "${p12File}" -passin pass:"${p12Pass}" -out tempcert.pe
 		process.exit();
 	}
 
-	/* GET CERT NAME */
-	exec("openssl x509 -in tempcert.pem -noout -nameopt -oneline -subject", (error, stdout, stderr) => {
-		certName = stdout.replace("\n", "").split("iPhone Distribution: ").pop().split(".,")[0];
-	});
-	
-	/* GET CERT EXPIRARION DATE */
-	exec("openssl x509 -in tempcert.pem -noout -enddate", (error, stdout, stderr) => {
-		certExpirationDate = stdout.replace("  ", " ").replace("notAfter=", "").slice(0, -1);
-	});
+	// Load PEM certificate
+	const cert = new crypto.X509Certificate(fs.readFileSync("tempcert.pem"))
+
+	// Get certificate name
+	certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
+	// Get expiration date
+	certExpirationDate = cert.validTo.replace("  ", " ")
 
 	/* GET CERT SIGNATURE STATUS */
 	// Probably a better way than doing this, but it's fast anyway and doesn't really matter anyway

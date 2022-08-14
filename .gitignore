@@ -3,3 +3,4 @@ CA-CER/
 CA-PEM/
 cert.p12
 pass.txt
+*.pem
