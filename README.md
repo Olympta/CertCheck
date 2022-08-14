@@ -5,6 +5,8 @@ Node JS utility to check the signature of Apple P12 Certificates.
 
 *Works with both enterprise and developer certificates.*
 
+Includes tool to convert CER files to PEM. (See [**cer-to-pem.js**](https://github.com/JailbreaksApp/CertCheck/blob/master/cer-to-pem.js))
+
 ## Contact
  - [**Twitter** **(@iCrazeiOS)**](https://twitter.com/iCrazeiOS)
  - **Discord:** iCraze#3017

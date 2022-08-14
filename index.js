@@ -16,12 +16,12 @@ if (!fs.existsSync(p12File)) {
 	console.log("CA certificates must be stored within 'CA-PEM/'");
 	console.log("Find them at https://www.apple.com/certificateauthority/ ('Worldwide Developer Relations' certificates)");
 	console.log("Convert them from CER to PEM via this command:");
-	console.log("\topenssl x509 -inform der -in <input file> -out <output file name>.pem");
+	console.log("\tnode cer-to-pem.js <path to .cer file>");
+	console.log("The generated PEM file will be saved in the same directory as the .cer file");
 	process.exit();
 }
 
 const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "");
-let certStatus, certName, certExpirationDate;
 
 /* Convert P12 to PEM */
 let cert;
@@ -29,15 +29,15 @@ try {
 	const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(fs.readFileSync(p12File, {encoding:"binary"})), false, p12Pass);
 	const certData = p12.getBags({bagType: forge.pki.oids.certBag});
 	cert = new crypto.X509Certificate(forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert));
-} catch (e) {
-	console.log(`Failed to convert P12 to PEM. ${e.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
+} catch (err) {
+	console.log(`Failed to convert P12 to PEM. ${err.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
 	process.exit();
 }
 
 // Get certificate name
-certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
+let certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
 // Get expiration date
-certExpirationDate = cert.validTo.replace("  ", " ");
+let certExpirationDate = cert.validTo.replace("  ", " ");
 
 /* GET CERT SIGNATURE STATUS */
 // Loop througn all CA certificates from CA-PEM folder
@@ -47,6 +47,7 @@ fs.readdirSync("CA-PEM").forEach(file => {
 	if (file.endsWith(".pem")) { // If PEM file
 		// Check if the certificate is signed by the CA
 		ocsp.check({cert: cert, issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8")}, function(error, res) {
+			let certStatus;
 			if (error) {
 				if (error.toString().includes("revoked")) certStatus = "Revoked";
 			} else if (res.type == "good") certStatus = "Signed";
