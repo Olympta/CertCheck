@@ -42,7 +42,7 @@ exec(`openssl pkcs12 -in "${p12File}" -passin pass:"${p12Pass}" -out tempcert.pe
 	/* GET CERT SIGNATURE STATUS */
 	// Probably a better way than doing this, but it's fast anyway and doesn't really matter anyway
 	fs.readdirSync("CA-PEM").forEach(file => { // Loop through files in CA-PEM folder
-		// I think this next line can break if there is a directory ending with .pem, but that's just intentionally breaking the script
+		// This next line can break if there is a directory ending with .pem, but that's just intentionally breaking the script so idc
 		if (file.endsWith(".pem")) { // If PEM file
 			// Check if the certificate is signed by the CA
 			ocsp.check({ cert: fs.readFileSync("tempcert.pem", "utf8"), issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8") }, function(error, res) {
