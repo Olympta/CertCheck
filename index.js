@@ -1,7 +1,7 @@
 const fs = require("fs");
-const crypto = require("crypto")
+const crypto = require("crypto");
+const forge = require("node-forge");
 const ocsp = require("ocsp");
-const { exec } = require("child_process");
 
 const p12File = __dirname+"/cert.p12";
 const p12PassFile = __dirname+"/pass.txt";
@@ -15,7 +15,7 @@ if (!fs.existsSync(p12File)) {
 } else if (!fs.existsSync("CA-PEM/")) {
 	console.log("CA certificates must be stored within 'CA-PEM/'");
 	console.log("Find them at https://www.apple.com/certificateauthority/ ('Worldwide Developer Relations' certificates)");
-	console.log("Convert them from CER to PEM via this command:")
+	console.log("Convert them from CER to PEM via this command:");
 	console.log("\topenssl x509 -inform der -in <input file> -out <output file name>.pem");
 	process.exit();
 }
@@ -23,40 +23,40 @@ if (!fs.existsSync(p12File)) {
 const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "");
 let certStatus, certName, certExpirationDate;
 
-// Convert .p12 to .pem
-exec(`openssl pkcs12 -in "${p12File}" -passin pass:"${p12Pass}" -out tempcert.pem -nodes`, (error, stdout, stderr) => {
-	if (stderr.includes("invalid password")) {
-		console.log("Failed to convert p12 to PEM. Password is likely incorrect.");
-		process.exit();
+/* Convert P12 to PEM */
+let cert;
+try {
+	const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(fs.readFileSync(p12File, {encoding:"binary"})), false, p12Pass);
+	const certData = p12.getBags({bagType: forge.pki.oids.certBag});
+	cert = new crypto.X509Certificate(forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert));
+} catch (e) {
+	console.log(`Failed to convert P12 to PEM. ${e.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
+	process.exit();
+}
+
+// Get certificate name
+certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
+// Get expiration date
+certExpirationDate = cert.validTo.replace("  ", " ");
+
+/* GET CERT SIGNATURE STATUS */
+// Loop througn all CA certificates from CA-PEM folder
+// Probably a better way than doing this, but it's fast anyway and doesn't really matter anyway
+fs.readdirSync("CA-PEM").forEach(file => {
+	// This next line can break if there is a directory ending with .pem, but that's just intentionally breaking the script so idc
+	if (file.endsWith(".pem")) { // If PEM file
+		// Check if the certificate is signed by the CA
+		ocsp.check({cert: cert, issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8")}, function(error, res) {
+			if (error) {
+				if (error.toString().includes("revoked")) certStatus = "Revoked";
+			} else if (res.type == "good") certStatus = "Signed";
+
+			if (certStatus) {
+				console.log("Certificate Name: " + certName);
+				console.log("Certificate Status: " + certStatus);
+				console.log("Certificate Expiration Date: " + certExpirationDate);
+				process.exit(); // Exit here so the script doesn't continue to check other certificates
+			}
+		});
 	}
-
-	// Load PEM certificate
-	const cert = new crypto.X509Certificate(fs.readFileSync("tempcert.pem"))
-
-	// Get certificate name
-	certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
-	// Get expiration date
-	certExpirationDate = cert.validTo.replace("  ", " ")
-
-	/* GET CERT SIGNATURE STATUS */
-	// Probably a better way than doing this, but it's fast anyway and doesn't really matter anyway
-	fs.readdirSync("CA-PEM").forEach(file => { // Loop through files in CA-PEM folder
-		// This next line can break if there is a directory ending with .pem, but that's just intentionally breaking the script so idc
-		if (file.endsWith(".pem")) { // If PEM file
-			// Check if the certificate is signed by the CA
-			ocsp.check({ cert: fs.readFileSync("tempcert.pem", "utf8"), issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8") }, function(error, res) {
-				if (error) {
-					if (error.toString().includes("revoked")) certStatus = "Revoked";
-				} else if (res.type == "good") certStatus = "Signed";
-
-				if (certStatus) {
-					console.log("Certificate Name: " + certName);
-					console.log("Certificate Status: " + certStatus);
-					console.log("Certificate Expiration Date: " + certExpirationDate);
-					fs.unlinkSync("tempcert.pem"); // Remove temporary PEM file
-					process.exit(); // Exit here so the script doesn't continue to check other certificates
-				}
-			});
-		}
-	});
 });

@@ -14,6 +14,4 @@ Node JS utility to check the signature of Apple P12 Certificates.
  - **BTC:** bc1q0ghuykcutljjyh3tcdjv88ek8zjzrtnk8zhuhy
 
 ## Requirements
- - Node JS (and `ocsp` module)
- - OpenSSL
- 
+ - Node JS (with `ocsp` & `node-forge` modules)
