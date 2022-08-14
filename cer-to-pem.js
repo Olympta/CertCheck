@@ -4,6 +4,9 @@ const filepath = process.argv[2];
 if (!filepath) {
     console.log("Incorrect usage. Usage: node cer-to-pem.js <path to .cer file>");
     process.exit();
+} else if (!fs.existsSync(filepath)) {
+    console.log(`File '${filepath}' does not exist`);
+    process.exit();
 }
 
 const cert = fs.readFileSync(filepath);
