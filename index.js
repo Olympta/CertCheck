@@ -1,5 +1,4 @@
 const fs = require("fs");
-const crypto = require("crypto");
 const forge = require("node-forge");
 const ocsp = require("ocsp");
 
@@ -28,7 +27,7 @@ let cert, certData;
 try {
 	const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(fs.readFileSync(p12File, {encoding:"binary"})), false, p12Pass);
 	certData = p12.getBags({bagType: forge.pki.oids.certBag});
-	cert = new crypto.X509Certificate(forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert));
+	cert = forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert); // no need to assign to variable, but makes the ocsp.check() line shorter
 } catch (err) {
 	console.log(`Failed to convert P12 to PEM. ${err.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
 	process.exit();
