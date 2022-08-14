@@ -30,12 +30,12 @@ exec(`openssl pkcs12 -in "${p12File}" -passin pass:"${p12Pass}" -out tempcert.pe
 	}
 
 	/* GET CERT NAME */
-	exec(`openssl x509 -in tempcert.pem -noout -nameopt -oneline -subject`, (error, stdout, stderr) => {
+	exec("openssl x509 -in tempcert.pem -noout -nameopt -oneline -subject", (error, stdout, stderr) => {
 		certName = stdout.replace("\n", "").split("iPhone Distribution: ").pop().split(".,")[0];
 	});
 	
 	/* GET CERT EXPIRARION DATE */
-	exec(`openssl x509 -in tempcert.pem -noout -enddate`, (error, stdout, stderr) => {
+	exec("openssl x509 -in tempcert.pem -noout -enddate", (error, stdout, stderr) => {
 		certExpirationDate = stdout.replace("  ", " ").replace("notAfter=", "").slice(0, -1);
 	});
 
