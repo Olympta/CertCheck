@@ -24,10 +24,10 @@ if (!fs.existsSync(p12File)) {
 const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "");
 
 /* Convert P12 to PEM */
-let cert;
+let cert, certData;
 try {
 	const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(fs.readFileSync(p12File, {encoding:"binary"})), false, p12Pass);
-	const certData = p12.getBags({bagType: forge.pki.oids.certBag});
+	certData = p12.getBags({bagType: forge.pki.oids.certBag});
 	cert = new crypto.X509Certificate(forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert));
 } catch (err) {
 	console.log(`Failed to convert P12 to PEM. ${err.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
@@ -35,9 +35,9 @@ try {
 }
 
 // Get certificate name
-let certName = cert.subject.split("Distribution: ")[1].split("\n")[0];
+let certName = certData[forge.pki.oids.certBag][0].cert.subject.attributes.filter(({name}) => name === "organizationName")[0].value;
 // Get expiration date
-let certExpirationDate = cert.validTo.replace("  ", " ");
+let certExpirationDate = new Date(certData[forge.pki.oids.certBag][0].cert.validity.notAfter.getTime()).toGMTString();
 
 /* GET CERT SIGNATURE STATUS */
 // Loop througn all CA certificates from CA-PEM folder
