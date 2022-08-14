@@ -46,18 +46,11 @@ exec(`openssl pkcs12 -in "${p12File}" -passin pass:"${p12Pass}" -out tempcert.pe
 		if (file.endsWith(".pem")) { // If PEM file
 			// Check if the certificate is signed by the CA
 			ocsp.check({ cert: fs.readFileSync("tempcert.pem", "utf8"), issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8") }, function(error, res) {
-				let success = false;
 				if (error) {
-					if (error.toString().includes("revoked")) {
-						success = true;
-						certStatus = "Revoked";
-					}
-				} else if (res.type == "good") {
-					success = true;
-					certStatus = "Signed";
-				}
+					if (error.toString().includes("revoked")) certStatus = "Revoked";
+				} else if (res.type == "good") certStatus = "Signed";
 
-				if (success) {
+				if (certStatus) {
 					console.log("Certificate Name: " + certName);
 					console.log("Certificate Status: " + certStatus);
 					console.log("Certificate Expiration Date: " + certExpirationDate);
