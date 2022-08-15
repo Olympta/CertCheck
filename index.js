@@ -2,14 +2,20 @@ const fs = require("fs");
 const forge = require("node-forge");
 const ocsp = require("ocsp");
 
-const p12File = __dirname+"/cert.p12";
-const p12PassFile = __dirname+"/pass.txt";
+// who needs an actual arg parser??
+const customDirectory = process.argv[2];
+// Only use if not null, does not include '--json', and actually exists
+const useCustomDirectory = (customDirectory && !customDirectory.includes("--json") && fs.existsSync(customDirectory));
+if (useCustomDirectory) console.log(`[!] Additional argument passed. Looking in '${customDirectory}' for certificate and password.\n`);
+
+const p12File = (useCustomDirectory ? customDirectory : __dirname)+"/cert.p12";
+const p12PassFile = (useCustomDirectory ? customDirectory : __dirname)+"/pass.txt";
 
 if (!fs.existsSync(p12File)) {
-	console.log("Certificate must be stored at cert.p12");
+	console.log("Certificate must be stored at ./cert.p12, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
 } else if (!fs.existsSync(p12PassFile)) {
-	console.log("Certificate password must be stored within pass.txt");
+	console.log("Certificate password must be stored within ./pass.txt, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
 } else if (!fs.existsSync("CA-PEM/")) {
 	console.log(`CA certificates must be stored within 'CA-PEM/'
@@ -52,9 +58,13 @@ fs.readdirSync("CA-PEM").forEach(file => {
 			} else if (res.type == "good") certStatus = "Signed";
 
 			if (certStatus) {
-				console.log("Certificate Name: " + certName);
-				console.log("Certificate Status: " + certStatus);
-				console.log("Certificate Expiration Date: " + certExpirationDate);
+				if (process.argv.toString().includes("--json")) { // If JSON output is requested
+					console.log(JSON.stringify({name: certName, status: certStatus, expirationDate: certExpirationDate}));
+				} else {
+					console.log("Certificate Name: " + certName);
+					console.log("Certificate Status: " + certStatus);
+					console.log("Certificate Expiration Date: " + certExpirationDate);
+				}
 				process.exit(); // Exit here so the script doesn't continue to check other certificates
 			}
 		});
