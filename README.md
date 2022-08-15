@@ -17,3 +17,15 @@ Includes tool to convert CER files to PEM. (See [**cer-to-pem.js**](https://gith
 
 ## Requirements
  - Node JS (with `ocsp` & `node-forge` modules)
+
+## Usage
+ **Standard usage:**
+  - Have cert.p12 and pass.txt in the same directory as the script.
+  - Run `node index.js`
+
+ **Specify directory:**
+  - Have cert.p12 and pass.txt in a different directory than the script.
+  - Run `node index.js "/path/to/directory"`
+
+ **JSON output:**
+  - Follow steps for other examples, but add `--json` to the end of the command. (MUST be after custom directory, if you are using one)
