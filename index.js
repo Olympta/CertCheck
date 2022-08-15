@@ -6,7 +6,8 @@ const ocsp = require("ocsp");
 const customDirectory = process.argv[2];
 // Only use if not null, does not include '--json', and actually exists
 const useCustomDirectory = (customDirectory && !customDirectory.includes("--json") && fs.existsSync(customDirectory));
-if (useCustomDirectory) console.log(`[!] Additional argument passed. Looking in '${customDirectory}' for certificate and password.\n`);
+const jsonOutput = process.argv.toString().includes("--json");
+if (useCustomDirectory && !jsonOutput) console.log(`[!] Additional argument passed. Looking in '${customDirectory}' for certificate and password.\n`);
 
 const p12File = (useCustomDirectory ? customDirectory : __dirname)+"/cert.p12";
 const p12PassFile = (useCustomDirectory ? customDirectory : __dirname)+"/pass.txt";
@@ -58,7 +59,7 @@ fs.readdirSync("CA-PEM").forEach(file => {
 			} else if (res.type == "good") certStatus = "Signed";
 
 			if (certStatus) {
-				if (process.argv.toString().includes("--json")) { // If JSON output is requested
+				if (jsonOutput) { // If JSON output is requested
 					console.log(JSON.stringify({name: certName, status: certStatus, expirationDate: certExpirationDate}));
 				} else {
 					console.log("Certificate Name: " + certName);
