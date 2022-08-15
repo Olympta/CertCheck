@@ -4,3 +4,4 @@ CA-PEM/
 cert.p12
 pass.txt
 *.pem
+node_modules/
