@@ -1,44 +1,23 @@
-const fs = require('fs')
-const https = require('https')
-const execSync = require('child_process').execSync;
+const fs = require("fs");
+const https = require("https");
+const execSync = require("child_process").execSync;
 
-const downloadCER = (url, dest) => {
-  const file = fs.createWriteStream(`cctmp-${dest}.cer`);
+const downloadCER = (filename) => {
+  const file = fs.createWriteStream(`cctmp-${filename}.cer`);
+  // The first CA certificate (AppleWWDRCA) is stored in a different place for some reason...
+  const url = filename.endsWith("A") ? "https://developer.apple.com/certificationauthority/AppleWWDRCA.cer" : `https://www.apple.com/certificateauthority/${filename}.cer`;
   https.get(url, (res) => {
-    res.pipe(file)
+    res.pipe(file);
     file.on('finish', () => {
-        file.close()
-        execSync(
-          `node ${__dirname}/cer-to-pem.js cctmp-${dest}.cer && mv cctmp-${dest}.pem CA-PEM/${dest}.pem && rm -rf cctmp-${dest}.cer`
-        )
+        file.close();
+        // Convert CER files to PEM
+        console.log(`[*] '${filename}.cer' has been downloaded, converting to PEM format...`);
+        execSync(`node ${__dirname}/cer-to-pem.js cctmp-${filename}.cer && mv cctmp-${filename}.pem CA-PEM/${filename}.pem && rm -rf cctmp-${filename}.cer`);
     })
   })
 }
+console.log('[*] Downloading resources...\n[*] Once complete, you can run the main script again.\n');
+if (!fs.existsSync("CA-PEM")) fs.mkdirSync("CA-PEM/");
 
-console.log('[*] Downloading resources...')
-fs.mkdirSync("CA-PEM/");
-downloadCER(
-  "https://developer.apple.com/certificationauthority/AppleWWDRCA.cer",
-  "G1"
-);
-downloadCER(
-  "https://www.apple.com/certificateauthority/AppleWWDRCAG2.cer",
-  "G2"
-);
-downloadCER(
-  "https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer",
-  "G3"
-);
-downloadCER(
-  "https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer",
-  "G4"
-);
-downloadCER(
-  "https://www.apple.com/certificateauthority/AppleWWDRCAG5.cer",
-  "G5"
-);
-downloadCER(
-  "https://www.apple.com/certificateauthority/AppleWWDRCAG6.cer",
-  "G6"
-);
-console.log(`[*] Downloaded resources. You can now re-run index.js.`);
+const certs = ["AppleWWDRCA", "AppleWWDRCAG2", "AppleWWDRCAG3", "AppleWWDRCAG4", "AppleWWDRCAG5", "AppleWWDRCAG6"];
+certs.forEach(cert => downloadCER(cert));

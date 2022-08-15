@@ -13,13 +13,13 @@ const p12File = (useCustomDirectory ? customDirectory : __dirname)+"/cert.p12";
 const p12PassFile = (useCustomDirectory ? customDirectory : __dirname)+"/pass.txt";
 
 if (!fs.existsSync(p12File)) {
-	console.log("Certificate must be stored at ./cert.p12, or within a specified directory (via 'node index.js /path/to/dir').");
+	console.log("[!] Certificate must be stored at ./cert.p12, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
 } else if (!fs.existsSync(p12PassFile)) {
-	console.log("Certificate password must be stored within ./pass.txt, or within a specified directory (via 'node index.js /path/to/dir').");
+	console.log("[!] Certificate password must be stored within ./pass.txt, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
 } else if (!fs.existsSync("CA-PEM")) {
-    console.log("[!] Please run 'resources.js' to retrieve the necessary resources from Apple's servers.");
+    console.log("[!] Please run 'resources.js' to retrieve the necessary resources from Apple's servers.\n[*] The downloaded certificates will be automatically converted to the correct format.");
     process.exit();
 }
 
