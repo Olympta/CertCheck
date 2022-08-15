@@ -9,7 +9,7 @@ const downloadCER = (url, dest) => {
     file.on('finish', () => {
         file.close()
         execSync(
-          `node cer-to-pem.js cctmp-${dest}.cer && mv cctmp-${dest}.pem CA-PEM/${dest}.pem && rm -rf cctmp-${dest}.cer`
+          `node ${__dirname}/cer-to-pem.js cctmp-${dest}.cer && mv cctmp-${dest}.pem CA-PEM/${dest}.pem && rm -rf cctmp-${dest}.cer`
         )
     })
   })

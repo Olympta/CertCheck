@@ -18,7 +18,7 @@ if (!fs.existsSync(p12File)) {
 } else if (!fs.existsSync(p12PassFile)) {
 	console.log("Certificate password must be stored within ./pass.txt, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
-} else if (!fs.existsSync("CA-PEM/")) {
+} else if (!fs.existsSync("CA-PEM")) {
     console.log("[!] Please run 'resources.js' to retrieve the necessary resources from Apple's servers.");
     process.exit();
 }
@@ -48,7 +48,7 @@ fs.readdirSync("CA-PEM").forEach(file => {
 	// This next line can break if there is a directory ending with .pem, but that's just intentionally breaking the script so idc
 	if (file.endsWith(".pem")) { // If PEM file
 		// Check if the certificate is signed by the CA
-		ocsp.check({cert: cert, issuer: fs.readFileSync(`${__dirname}/CA-PEM/${file}`, "utf8")}, function(error, res) {
+		ocsp.check({cert: cert, issuer: fs.readFileSync(`CA-PEM/${file}`, "utf8")}, function(error, res) {
 			let certStatus;
 			if (error) {
 				if (error.toString().includes("revoked")) certStatus = "Revoked";
