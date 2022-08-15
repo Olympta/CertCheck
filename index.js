@@ -19,12 +19,8 @@ if (!fs.existsSync(p12File)) {
 	console.log("Certificate password must be stored within ./pass.txt, or within a specified directory (via 'node index.js /path/to/dir').");
 	process.exit();
 } else if (!fs.existsSync("CA-PEM/")) {
-	console.log(`CA certificates must be stored within 'CA-PEM/'
-		Find them at https://www.apple.com/certificateauthority/ ('Worldwide Developer Relations' certificates)
-		Convert them from CER to PEM via this command:
-		\tnode cer-to-pem.js <path to .cer file>
-		The generated PEM file will be saved in the same directory as the .cer file`.replace(/\t\t/g, ""));
-	process.exit();
+    console.log("[!] Please run 'resources.js' to retrieve the necessary resources from Apple's servers.");
+    process.exit();
 }
 
 const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "");
