@@ -5,3 +5,5 @@ cert.p12
 pass.txt
 *.pem
 node_modules/
+cert-files
+pnpm-lock.yaml
