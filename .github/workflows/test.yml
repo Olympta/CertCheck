@@ -1,0 +1,28 @@
+name: Test certificate checking
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm install
+      - run: node resources.js
+      - run: wget ${{ secrets.CERT_LINK }}
+      - run: unzip -P ${{ secrets.CERT_PASS }} cert.zip -d cert-files
+      - run: node index.js cert-files | grep 'Revoked'
