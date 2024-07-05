@@ -1,7 +1,7 @@
 # CertCheck
 Node JS utility to check the signature of Apple P12 Certificates.
 
-*Confirmed to work on macOS and Linux. Windows may need slight changes.*
+*Confirmed to work on macOS, Windows, and Linux.*
 
 *Works with both enterprise and developer certificates.*
 
