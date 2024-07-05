@@ -2,6 +2,9 @@ const fs = require("fs");
 const forge = require("node-forge");
 const ocsp = require("ocsp");
 
+// ocsp module throws a deprecated warning, and is no longer maintained
+process.removeAllListeners("warning");
+
 // who needs an actual arg parser??
 const customDirectory = process.argv[2];
 // Only use if not null, does not include '--json', and actually exists
