@@ -12,7 +12,9 @@ const downloadCER = (filename) => {
         file.close();
         // Convert CER files to PEM
         console.log(`[*] '${filename}.cer' has been downloaded, converting to PEM format...`);
-        execSync(`node ${__dirname}/cer-to-pem.js cctmp-${filename}.cer && mv cctmp-${filename}.pem CA-PEM/${filename}.pem && rm -rf cctmp-${filename}.cer`);
+        execSync(`node ${__dirname}/cer-to-pem.js cctmp-${filename}.cer`);
+        fs.renameSync(`cctmp-${filename}.pem`, `CA-PEM/${filename}.pem`);
+        fs.unlinkSync(`cctmp-${filename}.cer`);
     })
   })
 }
