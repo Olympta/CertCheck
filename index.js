@@ -26,23 +26,17 @@ if (!fs.existsSync(p12File)) {
     process.exit();
 }
 
-const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "");
-
 /* Convert P12 to PEM */
 let cert, certData;
 try {
+	const p12Pass = String(fs.readFileSync(p12PassFile, "utf8")).replace("\n", "").trim();
 	const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(fs.readFileSync(p12File, {encoding:"binary"})), false, p12Pass);
 	certData = p12.getBags({bagType: forge.pki.oids.certBag});
-	cert = forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert); // no need to assign to variable, but makes the ocsp.check() line shorter
+	cert = forge.pki.certificateToPem(certData[forge.pki.oids.certBag][0].cert);
 } catch (err) {
-	console.log(`Failed to convert P12 to PEM. ${err.message.includes("Invalid password") ? "Password is likely incorrect" : "Unknown error"}.`);
+	console.log(`Failed to convert P12 to PEM. ${err.message.includes("password") ? "Password is likely incorrect" : "Unknown error"}.`);
 	process.exit();
 }
-
-// Get certificate name
-let certName = certData[forge.pki.oids.certBag][0].cert.subject.attributes.filter(({name}) => name === "organizationName")[0].value;
-// Get expiration date
-let certExpirationDate = new Date(certData[forge.pki.oids.certBag][0].cert.validity.notAfter.getTime()).toGMTString();
 
 /* GET CERT SIGNATURE STATUS */
 // Loop througn all CA certificates from CA-PEM folder
@@ -52,18 +46,24 @@ fs.readdirSync("CA-PEM").forEach(file => {
 	if (file.endsWith(".pem")) { // If PEM file
 		// Check if the certificate is signed by the CA
 		ocsp.check({cert: cert, issuer: fs.readFileSync(`CA-PEM/${file}`, "utf8")}, function(error, res) {
-			let certStatus;
+			let certStatus, certRevocationDate = null;
 			if (error) {
-				if (error.toString().includes("revoked")) certStatus = "Revoked";
+				if (error.toString().includes("revoked")) {
+					certStatus = "Revoked";
+					certRevocationDate = new Date(res.value.revocationTime).toGMTString();
+				}
 			} else if (res.type == "good") certStatus = "Signed";
 
 			if (certStatus) {
+				const certName = certData[forge.pki.oids.certBag][0].cert.subject.attributes.filter(({name}) => name === "organizationName")[0].value;
+				const certExpirationDate = new Date(certData[forge.pki.oids.certBag][0].cert.validity.notAfter.getTime()).toGMTString();
 				if (jsonOutput) { // If JSON output is requested
-					console.log(JSON.stringify({name: certName, status: certStatus, expirationDate: certExpirationDate}));
+					console.log(JSON.stringify({name: certName, status: certStatus, expirationDate: certExpirationDate, revocationDate: certRevocationDate}));
 				} else {
 					console.log("Certificate Name: " + certName);
 					console.log("Certificate Status: " + certStatus);
 					console.log("Certificate Expiration Date: " + certExpirationDate);
+					if (certRevocationDate) console.log("Certificate Revocation Date: " + certRevocationDate);
 				}
 				process.exit(); // Exit here so the script doesn't continue to check other certificates
 			}
